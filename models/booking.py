@@ -5,7 +5,6 @@ from datetime import datetime
 
 class BookingCreate(BaseModel):
     session_id: UUID
-    member_id: UUID
 
 class BookingStatusUpdate(BaseModel):
     status: str
