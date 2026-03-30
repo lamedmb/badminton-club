@@ -95,6 +95,17 @@ def get_my_bookings(current_member=Security(get_current_member)):
     ).eq("member_id", current_member["id"]).execute()
     return result.data
 
+@router.get("/session/{session_id}/attendees")
+def get_session_attendees(
+    session_id: str,
+    current_member=Security(get_current_member)
+):
+    result = supabase.table("bookings").select(
+        "status, members(name)"
+    ).eq("session_id", session_id).neq("status", "cancelled").execute()
+
+    return result.data
+
 
 @router.post("/")
 def create_booking(
