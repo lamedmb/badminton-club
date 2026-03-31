@@ -2,15 +2,18 @@ from fastapi import APIRouter, HTTPException, Security
 from database import supabase
 from models.session import SessionCreate
 from auth import get_current_admin
+from datetime import date 
 
 router = APIRouter()
 
 
 @router.get("/")
 def get_sessions():
+    today = date.today().isoformat()
+    
     result = supabase.table("sessions").select(
         "*, locations(name, address)"
-    ).execute()
+    ).gte("date", today).order("date").execute()
 
     sessions = []
     for s in result.data:
