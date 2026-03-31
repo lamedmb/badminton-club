@@ -46,35 +46,40 @@ def promote_from_waitlist(session_id: str):
     max_capacity = get_session_capacity(session_id)
     current_count = get_confirmed_count(session_id)
 
-    if current_count >= max_capacity:
+    spots_available = max_capacity - current_count
+
+    if spots_available <= 0:
         return
 
-    next_in_line = supabase.table("bookings").select("id, member_id").eq(
-        "session_id", session_id
-    ).eq("status", "waitlisted").order("created_at").limit(1).execute()
+    next_in_line = supabase.table("bookings").select(
+        "id, member_id"
+    ).eq("session_id", session_id).eq(
+        "status", "waitlisted"
+    ).order("created_at").limit(spots_available).execute()
 
     if not next_in_line.data:
         return
 
-    promoted = next_in_line.data[0]
+    for promoted in next_in_line.data:
+        supabase.table("bookings").update({
+            "status": "confirmed",
+            "status_updated_at": "now()"
+        }).eq("id", promoted["id"]).execute()
 
-    supabase.table("bookings").update({
-        "status": "tbc",
-        "status_updated_at": "now()"
-    }).eq("id", promoted["id"]).execute()
-
-    session, member = get_session_and_member(session_id, promoted["member_id"])
-    if session and member:
-        try:
-            send_booking_confirmation(
-                member_name=member["name"],
-                member_email=member["email"],
-                session_date=str(session["date"]),
-                session_location=session["locations"]["name"],
-                status="tbc"
-            )
-        except Exception as e:
-            print(f"Email failed (waitlist promotion): {e}")
+        session, member = get_session_and_member(
+            session_id, promoted["member_id"]
+        )
+        if session and member:
+            try:
+                send_booking_confirmation(
+                    member_name=member["name"],
+                    member_email=member["email"],
+                    session_date=str(session["date"]),
+                    session_location=session["locations"]["name"],
+                    status="confirmed"
+                )
+            except Exception as e:
+                print(f"Email failed (waitlist promotion): {e}")
 
 
 @router.get("/session/{session_id}")
@@ -216,3 +221,40 @@ def update_booking_status(
         promote_from_waitlist(booking["session_id"])
 
     return result.data[0]
+
+
+@router.get("/session/{session_id}/waitlist-position")
+def get_waitlist_position(
+    session_id: str,
+    current_member=Security(get_current_member)
+):
+    my_booking = supabase.table("bookings").select(
+        "id, status, created_at"
+    ).eq("session_id", session_id).eq(
+        "member_id", current_member["id"]
+    ).neq("status", "cancelled").execute()
+
+    if not my_booking.data:
+        return {"status": "not_booked"}
+
+    booking = my_booking.data[0]
+
+    if booking["status"] != "waitlisted":
+        return {"status": booking["status"]}
+
+    all_waitlisted = supabase.table("bookings").select(
+        "id, created_at"
+    ).eq("session_id", session_id).eq(
+        "status", "waitlisted"
+    ).order("created_at").execute()
+
+    position = next(
+        (i + 1 for i, b in enumerate(all_waitlisted.data) if b["id"] == booking["id"]),
+        None
+    )
+
+    return {
+        "status": "waitlisted",
+        "position": position,
+        "total_waitlisted": len(all_waitlisted.data)
+    }

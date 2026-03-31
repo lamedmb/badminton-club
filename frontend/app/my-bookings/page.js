@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import Navbar from '../../components/Navbar'
 import { bookingService } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
+import { useEffect, useState } from 'react'
 
 const statusColours = {
   confirmed: 'bg-green-100 text-green-700',
@@ -62,48 +63,68 @@ export default function MyBookingsPage() {
   const upcomingBookings = bookings.filter(b => isUpcoming(b) && b.status !== 'cancelled')
   const pastBookings = bookings.filter(b => !isUpcoming(b) || b.status === 'cancelled')
 
-  const BookingCard = ({ booking, showActions }) => (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="font-medium text-gray-900">
-            {formatDate(booking.sessions?.date)}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {formatTime(booking.sessions?.start_time)} – {formatTime(booking.sessions?.end_time)}
-          </p>
-          <p className="text-sm text-gray-500">
-            {booking.sessions?.locations?.name}
-          </p>
-          <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full mt-2 ${statusColours[booking.status]}`}>
-            {booking.status.toUpperCase()}
-          </span>
-        </div>
-        {showActions && (
-          <div className="flex flex-col gap-2">
-            {booking.status === 'tbc' && (
-              <button
-                onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                disabled={updating === booking.id}
-                className="bg-green-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-              >
-                Confirm
-              </button>
-            )}
-            {booking.status !== 'cancelled' && (
-              <button
-                onClick={() => handleStatusChange(booking.id, 'cancelled')}
-                disabled={updating === booking.id}
-                className="bg-white text-red-500 border border-red-200 text-xs px-4 py-2 rounded-lg hover:bg-red-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
+  const BookingCard = ({ booking, showActions }) => {
+    const [waitlistInfo, setWaitlistInfo] = useState(null)
+
+    useEffect(() => {
+      if (booking.status === 'waitlisted') {
+        bookingService.getWaitlistPosition(booking.sessions?.id || booking.session_id)
+          .then(res => setWaitlistInfo(res.data))
+          .catch(err => console.error(err))
+      }
+    }, [booking])
+
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="font-medium text-gray-900">
+              {formatDate(booking.sessions?.date)}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              {formatTime(booking.sessions?.start_time)} – {formatTime(booking.sessions?.end_time)}
+            </p>
+            <p className="text-sm text-gray-500">
+              {booking.sessions?.locations?.name}
+            </p>
+            <span className={`inline-block text-xs font-medium px-2 py-1 rounded-full mt-2 ${statusColours[booking.status]}`}>
+              {booking.status.toUpperCase()}
+            </span>
+            {booking.status === 'waitlisted' && waitlistInfo && (
+              <p className="text-xs text-blue-600 mt-1">
+                You are #{waitlistInfo.position} on the waitlist
+                {waitlistInfo.total_waitlisted > 1
+                  ? ` (${waitlistInfo.total_waitlisted} people waiting)`
+                  : ''}
+              </p>
             )}
           </div>
-        )}
+          {showActions && (
+            <div className="flex flex-col gap-2">
+              {booking.status === 'tbc' && (
+                <button
+                  onClick={() => handleStatusChange(booking.id, 'confirmed')}
+                  disabled={updating === booking.id}
+                  className="bg-green-600 text-white text-xs px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+              )}
+              {booking.status !== 'cancelled' && (
+                <button
+                  onClick={() => handleStatusChange(booking.id, 'cancelled')}
+                  disabled={updating === booking.id}
+                  className="bg-white text-red-500 border border-red-200 text-xs px-4 py-2 rounded-lg hover:bg-red-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

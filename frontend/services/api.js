@@ -55,5 +55,8 @@ export const bookingService = {
     api.patch(`/bookings/${bookingId}/status`, { status }),
 
   getAttendees: (sessionId) =>
-    api.get(`/bookings/session/${sessionId}/attendees`)
+    api.get(`/bookings/session/${sessionId}/attendees`),
+
+  getWaitlistPosition: (sessionId) =>
+    api.get(`/bookings/session/${sessionId}/waitlist-position`)
 }

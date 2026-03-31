@@ -12,11 +12,13 @@ def send_booking_confirmation(member_name: str, member_email: str, session_date:
         subject = "You've signed up for badminton — awaiting confirmation"
         status_message = "Your spot is currently <strong>TBC</strong>. Please confirm or remove your signup so others can plan."
     elif status == "confirmed":
-        subject = "Your badminton booking is confirmed!"
-        status_message = "Your spot is <strong>confirmed</strong>. See you on the court!"
+        subject = "Your badminton spot is confirmed!"
+        status_message = "Great news — your spot is <strong>confirmed</strong>. See you on the court!"
     elif status == "waitlisted":
         subject = "You're on the waitlist for badminton"
-        status_message = "The session is currently full. You're on the <strong>waitlist</strong> and we'll notify you if a spot opens up."
+        status_message = """You're on the <strong>waitlist</strong> for this session — it's currently full. 
+        We'll automatically confirm your spot and notify you if someone cancels. 
+        No action needed from you."""
     elif status == "cancelled":
         subject = "Your badminton booking has been cancelled"
         status_message = "Your booking has been <strong>cancelled</strong>. Sign up for another session anytime."
