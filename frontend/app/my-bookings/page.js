@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import Navbar from '../../components/Navbar'
 import { bookingService } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
-import { useEffect, useState } from 'react'
 
 const statusColours = {
   confirmed: 'bg-green-100 text-green-700',

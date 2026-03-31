@@ -258,3 +258,37 @@ def get_waitlist_position(
         "position": position,
         "total_waitlisted": len(all_waitlisted.data)
     }
+
+@router.patch("/{booking_id}/admin-status")
+def admin_update_booking_status(
+    booking_id: str,
+    update: BookingStatusUpdate,
+    current_admin=Security(get_current_admin)
+):
+    valid_statuses = ["tbc", "confirmed", "waitlisted", "cancelled"]
+    if update.status not in valid_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Status must be one of {valid_statuses}"
+        )
+
+    result = supabase.table("bookings").update({
+        "status": update.status,
+        "status_updated_at": "now()"
+    }).eq("id", booking_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if update.status == "cancelled":
+        promote_from_waitlist(result.data[0]["session_id"])
+
+    return result.data[0]
+
+
+@router.get("/all")
+def get_all_bookings(current_admin=Security(get_current_admin)):
+    result = supabase.table("bookings").select(
+        "*, members(name, email), sessions(date, start_time, locations(name))"
+    ).execute()
+    return result.data

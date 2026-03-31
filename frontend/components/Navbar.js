@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { useAuth } from '../context/AuthContext'
 import { useRouter } from 'next/navigation'
 
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL
+
 export default function Navbar() {
   const { member, logout } = useAuth()
   const router = useRouter()
@@ -27,6 +29,11 @@ export default function Navbar() {
               <Link href="/my-bookings" className="text-sm text-gray-600 hover:text-gray-900">
                 My bookings
               </Link>
+              {member.email === ADMIN_EMAIL && (
+                <Link href="/admin" className="text-sm text-orange-600 hover:text-orange-800 font-medium">
+                  Admin
+                </Link>
+              )}
               <span className="text-sm text-gray-400">{member.email}</span>
               <button
                 onClick={handleLogout}

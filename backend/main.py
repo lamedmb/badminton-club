@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import sessions, bookings, auth
+from routes import sessions, bookings, auth, members, locations
 
 app = FastAPI(title="Badminton Club API")
 
@@ -15,6 +15,8 @@ app.add_middleware(
 app.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
 app.include_router(bookings.router, prefix="/bookings", tags=["Bookings"])
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(members.router, prefix="/members", tags=["Members"])
+app.include_router(locations.router, prefix="/locations", tags=["Locations"])
 
 @app.get("/")
 def home():

@@ -75,3 +75,25 @@ def delete_session(
 
     result = supabase.table("sessions").delete().eq("id", session_id).execute()
     return {"message": "Session deleted successfully"}
+
+
+@router.patch("/{session_id}")
+def update_session(
+    session_id: str,
+    session: SessionCreate,
+    current_admin=Security(get_current_admin)
+):
+    data = session.model_dump()
+    data["location_id"] = str(data["location_id"])
+    data["start_time"] = str(data["start_time"])
+    data["end_time"] = str(data["end_time"])
+    data["date"] = str(data["date"])
+
+    result = supabase.table("sessions").update(data).eq("id", session_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    updated = result.data[0]
+    updated["max_capacity"] = updated["courts_booked"] * updated["capacity_per_court"]
+    return updated

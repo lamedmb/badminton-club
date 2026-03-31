@@ -51,13 +51,20 @@ def login(request: LoginRequest):
     if not auth_response.user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    auth_id = auth_response.user.id
+    member_result = supabase.table("members").select("*").eq(
+        "auth_id", auth_id
+    ).execute()
+
+    member_data = member_result.data[0] if member_result.data else {
+        "id": auth_response.user.id,
+        "email": auth_response.user.email
+    }
+
     return {
         "access_token": auth_response.session.access_token,
         "token_type": "bearer",
-        "member": {
-            "id": auth_response.user.id,
-            "email": auth_response.user.email
-        }
+        "member": member_data
     }
 
 @router.post("/logout")
