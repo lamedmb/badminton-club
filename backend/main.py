@@ -4,9 +4,14 @@ from routes import sessions, bookings, auth, members, locations
 
 app = FastAPI(title="Badminton Club API")
 
+origins = [
+    "http://localhost:3000",
+    "https://gabminton.vercel.app/",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
